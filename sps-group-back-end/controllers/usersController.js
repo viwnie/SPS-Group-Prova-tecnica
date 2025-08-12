@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { body, param } from 'express-validator';
 import { runValidation } from '../utils/validators.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
-import { usersDB, register } from './authController.js';
+import { usersDB } from './authController.js';
 
 const router = express.Router();
 dotenv.config();
@@ -15,41 +15,25 @@ function findUserById(id) {
   return usersDB.find(user => user.id === id);
 }
 
-router.post(
-  '/',
-  [
-    body('email').isEmail().withMessage('Email inválido'),
-    body('name').notEmpty().withMessage('Nome é obrigatório'),
-    body('type').notEmpty().withMessage('Tipo é obrigatório'),
-    body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres')
-  ],
-  runValidation,
-  async (req, res) => {
-    const { email, name, type, password } = req.body;
-
-    if (usersDB.some(user => user.email.toLowerCase() === email.toLowerCase())) {
-      return res.status(409).json({ message: 'Email já cadastrado' });
-    }
-    try {
-      const user = await register({ email, name, type, password });
-      res.status(201).json(user);
-    } catch (error) {
-      res.status(500).json({ message: 'Erro ao criar usuário' });
-    }
+function authorizeAdmin(req, res, next) {
+  if (req.user.type !== 'admin') {
+    return res.status(403).json({ message: 'Acesso negado. Apenas administradores podem executar esta ação.' });
   }
-);
+  next();
+}
 
-router.get('/', authenticate, (req, res) => {
+router.get('/', authenticate, authorizeAdmin, (req, res) => {
   const users = usersDB.map(({ passHash, ...rest }) => rest);
   res.json(users);
 });
 
+
 router.put('/:id',
+  authenticate,
   [
     param('id').isInt().withMessage('ID inválido'),
     body('email').isEmail().withMessage('Email inválido'),
     body('name').notEmpty().withMessage('Nome é obrigatório'),
-    body('type').notEmpty().withMessage('Tipo é obrigatório'),
     body('password').isLength({ min: 6 }).withMessage('Senha deve ter pelo menos 6 caracteres')
   ],
   runValidation,
@@ -60,22 +44,35 @@ router.put('/:id',
     if (!user) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
-    const { email, name, type, password } = req.body;
 
-    if (email && usersDB.some(user => user.email.toLowerCase() === email.toLowerCase() && user.id !== id)) {
+    if (req.user.type !== 'admin' && req.user.id !== id) {
+      return res.status(403).json({ message: 'Você só pode editar seu próprio perfil.' });
+    }
+
+    const { email, name, password, type } = req.body;
+
+    if (email && usersDB.some(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== id)) {
       return res.status(409).json({ message: 'Email já cadastrado' });
     }
+
     if (email) user.email = email;
     if (name) user.name = name;
-    if (type) user.type = type;
+
+    if (req.user.type === 'admin' && type) {
+      user.type = type;
+    }
+
     if (password) {
       user.passHash = await bcrypt.hash(password, saltRounds);
     }
+
     res.json({ user: { id: user.id, email: user.email, name: user.name, type: user.type } });
   }
 );
 
+
 router.delete('/:id',
+  authenticate,
   [
     param('id').isInt().withMessage('ID inválido')
   ],
@@ -83,9 +80,15 @@ router.delete('/:id',
   async (req, res) => {
     const id = parseInt(req.params.id);
     const index = usersDB.findIndex(user => user.id === id);
+
     if (index === -1) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
+
+    if (req.user.type !== 'admin' && req.user.id !== id) {
+      return res.status(403).json({ message: 'Você só pode deletar sua própria conta.' });
+    }
+
     usersDB.splice(index, 1);
     res.json({ message: 'Usuário deletado com sucesso' });
   }

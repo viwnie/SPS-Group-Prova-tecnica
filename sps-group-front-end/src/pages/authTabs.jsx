@@ -1,22 +1,78 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CustomInput from "../components/CustomInput";
+import { getItem } from '../utils/storage';
+import { useNavigate } from 'react-router-dom';
+import { login, register } from '../services/api';
+import { entrar } from '../services/auth';
 
 export function AuthTabs() {
   const [activeTab, setActiveTab] = useState("login");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ name: "", email: "", confirmEmail: "", password: "", confirmPassword: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = getItem('token')
+
+    if (token) {
+      navigate('/home')
+    }
+  }, [navigate])
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log(loginData);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await login(loginData.email, loginData.password);
+      entrar(response.token);
+      navigate('/home');
+    } catch (error) {
+      setError(error.message || 'Erro ao fazer login');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    console.log(registerData);
+    setLoading(true);
+    setError("");
+
+    if (registerData.email !== registerData.confirmEmail) {
+      setError("Os e-mails não coincidem");
+      setLoading(false);
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      setError("As senhas não coincidem");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const userData = {
+        name: registerData.name,
+        email: registerData.email,
+        password: registerData.password,
+        type: "Admin"
+      };
+
+      await register(userData);
+      setActiveTab("login");
+      setError("");
+      alert("Usuário registrado com sucesso! Faça login para continuar.");
+    } catch (error) {
+      setError(error.message || 'Erro ao fazer registro');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -44,6 +100,12 @@ export function AuthTabs() {
         </div>
 
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           {activeTab === "login" ? (
             <form className="space-y-6" onSubmit={handleLogin}>
               <CustomInput
@@ -68,9 +130,13 @@ export function AuthTabs() {
 
               <button
                 type="submit"
-                className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                disabled={loading}
+                className={`w-full py-2 px-4 text-white rounded-md ${loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
               >
-                Entrar
+                {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
           ) : (
@@ -130,9 +196,13 @@ export function AuthTabs() {
 
               <button
                 type="submit"
-                className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                disabled={loading}
+                className={`w-full py-2 px-4 text-white rounded-md ${loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
               >
-                Registrar
+                {loading ? 'Registrando...' : 'Registrar'}
               </button>
             </form>
           )}
