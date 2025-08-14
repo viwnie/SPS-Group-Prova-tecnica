@@ -84,7 +84,6 @@ router.put('/:id',
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
-    // Usuários não-admin só podem editar seu próprio perfil
     if (req.user.type !== 'admin' && req.user.id !== id) {
       return res.status(403).json({ message: 'Você só pode editar seu próprio perfil.' });
     }
@@ -100,7 +99,6 @@ router.put('/:id',
     if (name) updates.name = name;
     if (password) updates.password = password;
 
-    // Apenas administradores podem alterar o tipo de usuário
     if (type !== undefined) {
       if (req.user.type !== 'admin') {
         return res.status(403).json({
@@ -108,7 +106,6 @@ router.put('/:id',
         });
       }
 
-      // Verificar se não está removendo o último admin
       if (type !== 'admin' && user.type === 'admin') {
         const adminCount = User.getAdminCount();
         if (adminCount <= 1) {
@@ -118,14 +115,12 @@ router.put('/:id',
         }
       }
 
-      // Se o admin está removendo seus próprios privilégios, invalidar o token
       if (req.user.id === id && type !== 'admin' && user.type === 'admin') {
         updates.type = type;
 
         try {
           const updatedUser = await User.update(id, updates);
 
-          // Retornar resposta especial indicando que o token foi invalidado
           return res.status(200).json({
             message: 'Privilégios de administrador removidos com sucesso. Faça login novamente para continuar.',
             tokenInvalidated: true,
@@ -162,8 +157,19 @@ router.delete('/:id',
   async (req, res) => {
     const id = parseInt(req.params.id);
 
-    if (req.user.type !== 'admin' && req.user.id !== id) {
-      return res.status(403).json({ message: 'Você só pode deletar sua própria conta.' });
+    if (req.user.id === id) {
+      if (req.user.type === 'admin') {
+        const adminCount = User.getAdminCount();
+        if (adminCount <= 1) {
+          return res.status(403).json({
+            message: 'Não é possível deletar sua conta. Você é o último administrador do sistema.'
+          });
+        }
+      }
+    } else {
+      if (req.user.type !== 'admin') {
+        return res.status(403).json({ message: 'Você só pode deletar sua própria conta.' });
+      }
     }
 
     const success = User.delete(id);
