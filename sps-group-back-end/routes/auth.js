@@ -1,41 +1,11 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
 import { body } from 'express-validator';
 import { runValidation } from '../utils/validators.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
+import { User } from '../models/User.js';
 
 const router = express.Router();
-dotenv.config();
-
-const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || '10');
-
-const usersDB = [];
-
-function findUserByEmail(email) {
-  return usersDB.find(user => user.email.toLowerCase() === email.toLowerCase());
-}
-
-async function register({ email, name, type, password }) {
-  const passHash = await bcrypt.hash(password, saltRounds);
-  const id = usersDB.length ? usersDB[usersDB.length - 1].id + 1 : 1;
-  const user = { id, email, name, type, passHash };
-  usersDB.push(user);
-  return user;
-}
-
-(async () => {
-  if (!findUserByEmail('admin@sps.com')) {
-    await register({
-      email: 'admin@sps.com',
-      name: 'Admin',
-      type: 'admin',
-      password: 'admin123'
-    });
-    console.log('✅ Usuário admin pré-cadastrado!');
-  }
-})();
 
 router.post('/login',
   [
@@ -46,12 +16,12 @@ router.post('/login',
   async (req, res) => {
     const { email, password } = req.body;
 
-    const user = findUserByEmail(email);
+    const user = User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    const valid = await bcrypt.compare(password, user.passHash);
+    const valid = await User.verifyPassword(user, password);
     if (!valid) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
@@ -78,12 +48,12 @@ router.post('/register',
   async (req, res) => {
     const { email, name, password } = req.body;
 
-    if (usersDB.some(user => user.email.toLowerCase() === email.toLowerCase())) {
+    if (User.emailExists(email)) {
       return res.status(409).json({ message: 'Email já cadastrado' });
     }
 
     try {
-      const user = await register({ email, name, type: 'user', password });
+      const user = await User.create({ email, name, type: 'user', password });
       res.status(201).json({
         user: { id: user.id, email: user.email, name: user.name, type: 'user' }
       });
@@ -93,7 +63,7 @@ router.post('/register',
   }
 );
 
-router.post('/admin/register',
+router.post('/users',
   authenticate,
   [
     body('email').isEmail().withMessage('Email inválido'),
@@ -109,12 +79,12 @@ router.post('/admin/register',
 
     const { email, name, type, password } = req.body;
 
-    if (usersDB.some(user => user.email.toLowerCase() === email.toLowerCase())) {
+    if (User.emailExists(email)) {
       return res.status(409).json({ message: 'Email já cadastrado' });
     }
 
     try {
-      const user = await register({ email, name, type, password });
+      const user = await User.create({ email, name, type, password });
       res.status(201).json({
         user: { id: user.id, email: user.email, name: user.name, type: user.type }
       });
@@ -125,4 +95,3 @@ router.post('/admin/register',
 );
 
 export default router;
-export { usersDB, register };
