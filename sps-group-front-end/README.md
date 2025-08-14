@@ -1,70 +1,108 @@
-# Getting Started with Create React App
+# SPS Group Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Estrutura do Projeto
 
-## Available Scripts
+```
+sps-group-front-end/
+├── src/
+│   ├── components/
+│   │   ├── Layout/
+│   │   │   ├── Header.jsx          # Cabeçalho com navegação
+│   │   │   └── Layout.jsx          # Layout principal das páginas
+│   │   ├── AuthGuard.jsx           # Guarda de autenticação
+│   │   ├── CustomInput.jsx         # Input customizado com validação
+│   │   └── ProtectedRoute.jsx      # Rota protegida
+│   ├── contexts/
+│   │   └── AuthContext.jsx         # Contexto de autenticação
+│   ├── hooks/
+│   │   ├── useApi.js               # Hook para gerenciar chamadas da API
+│   │   └── useForm.js              # Hook para gerenciar formulários
+│   ├── pages/
+│   │   ├── authTabs.jsx            # Página de login/registro
+│   │   ├── Home.jsx                # Página inicial
+│   │   ├── Profile.jsx             # Página de perfil
+│   │   └── UsersManagement.jsx     # Gerenciamento de usuários
+│   ├── services/
+│   │   └── api.js                  # Serviços da API organizados
+│   ├── utils/
+│   │   └── storage.js              # Utilitários de armazenamento
+│   ├── App.jsx                     # Componente principal
+│   └── index.js                    # Ponto de entrada
+├── public/                         # Arquivos estáticos
+├── tailwind.config.js              # Configuração do Tailwind CSS
+└── package.json
+```
 
-In the project directory, you can run:
+## Funcionalidades
 
-### `npm start`
+### Autenticação
+- Login com email e senha
+- Registro de novos usuários
+- Sistema de autenticação JWT
+- Proteção de rotas
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Interface
+- Design responsivo com Tailwind CSS
+- Layout consistente com cabeçalho de navegação
+- Formulários com validação e tratamento de erros
+- Componentes reutilizáveis
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Gerenciamento de Estado
+- Context API para autenticação
+- Hooks customizados para formulários e API
+- Gerenciamento de estado local e global
 
-### `npm test`
+## Tecnologias Utilizadas
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **React 18** - Biblioteca de interface
+- **React Router** - Roteamento da aplicação
+- **Tailwind CSS** - Framework de estilização
+- **Axios** - Cliente HTTP para API
+- **Context API** - Gerenciamento de estado
 
-### `npm run build`
+## Como Executar
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Instalar dependências:
+```bash
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Iniciar o servidor:
+vá ate a pasta sps-group-back-end e execute o comando:
+```bash
+node ./server.js
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. Volte para a pasta sps-group-front-end e execute o comando:
+```bash
+npm run start
+```
 
-### `npm run eject`
+## Usuário Padrão
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+O sistema cria automaticamente um usuário administrador:
+- Email: admin@sps.com
+- Senha: admin123
+- Tipo: admin
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Estrutura de Componentes
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Hooks Customizados
+- **useApi**: Gerencia chamadas da API com loading e tratamento de erros
+- **useForm**: Gerencia estado de formulários com validação
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Serviços
+- **authService**: Operações de autenticação (login, registro)
+- **userService**: Operações de usuário (CRUD)
 
-## Learn More
+### Layout
+- **Header**: Cabeçalho com navegação e informações do usuário
+- **Layout**: Wrapper principal para páginas autenticadas
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Padrões de Desenvolvimento
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Componentes funcionais com hooks
+- Separação clara de responsabilidades
+- Reutilização de código através de hooks customizados
+- Tratamento consistente de erros
+- Design responsivo e acessível
